@@ -178,5 +178,38 @@ class PrioritizedSweepingValueIterationAgent(AsynchronousValueIterationAgent):
         self.theta = theta
         ValueIterationAgent.__init__(self, mdp, discount, iterations)
 
+    def get_max_Q(self, state): 
+      return max(self.getQValue(state,action) for action in self.mdp.getPossibleActions(state))
+
+
     def runValueIteration(self):
-        "*** YOUR CODE HERE ***"
+      "*** YOUR CODE HERE ***"
+      predecessors = {} 
+      for state in self.mdp.getStates(): 
+        predecessors[state] = set()
+
+      states = util.PriorityQueue()
+
+      for state in self.mdp.getStates(): 
+        if not self.mdp.isTerminal(state): 
+          for action in self.mdp.getPossibleActions(state): 
+            for successor, prob in self.mdp.getTransitionStatesAndProbs(state, action): 
+              if prob > 0: 
+                predecessors[successor].add(state)
+
+
+          diff = abs(self.values[state]-self.get_max_Q(state)) 
+          states.push(state,-diff)
+
+      for i in xrange(self.iterations): 
+        if states.isEmpty(): 
+          break 
+
+        state = states.pop()
+        self.values[state] = self.get_max_Q(state)
+        for p in predecessors[state]: 
+          diff = abs(self.values[p]-self.get_max_Q(p))
+          if diff > self.theta: 
+            states.update(p,-diff)
+
+
